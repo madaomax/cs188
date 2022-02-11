@@ -90,31 +90,31 @@ def depthFirstSearch(problem: SearchProblem):
     """
     frontier = util.Stack()
     frontier.push((problem.getStartState(), [], 0))
-    visited = [] # visted state
+    visited = set()  # visted state
     while not frontier.isEmpty():
         node = frontier.pop()
-        visited.append(node[0])
         if problem.isGoalState(node[0]):
             return node[1]
-        for successor, action, stepCost in [s for s in problem.getSuccessors(node[0]) if s[0] not in visited]:
-            frontier.push((successor, node[1] + [action], stepCost))
+        if node[0] not in visited:
+            visited.add(node[0])
+            for successor, action, stepCost in [s for s in problem.getSuccessors(node[0]) if s[0] not in visited]:
+                frontier.push((successor, node[1] + [action], stepCost))
     return None
-    
-    
 
 
 def breadthFirstSearch(problem: SearchProblem):
     """Search the shallowest nodes in the search tree first."""
     frontier = util.Queue()
     frontier.push((problem.getStartState(), [], 0))
-    visited = [problem.getStartState()] # visted state
+    visited = set()  # visted state
     while not frontier.isEmpty():
         node = frontier.pop()
         if problem.isGoalState(node[0]):
             return node[1]
-        for successor, action, stepCost in [s for s in problem.getSuccessors(node[0]) if s[0] not in visited]:
-            visited.append(successor)
-            frontier.push((successor, node[1] + [action], stepCost))
+        if node[0] not in visited:
+            visited.add(node[0])
+            for successor, action, stepCost in [s for s in problem.getSuccessors(node[0]) if s[0] not in visited]:
+                frontier.push((successor, node[1] + [action], stepCost))
     return None
 
 
