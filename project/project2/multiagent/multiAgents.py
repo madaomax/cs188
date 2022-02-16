@@ -194,7 +194,19 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         successors = [(gameState.generateSuccessor(0, action), action)
                       for action in gameState.getLegalActions(0)]
-        return max(successors, key=lambda s: self.minimax_prune_val(1, s[0], float('-inf'), float('inf'), 0))[1]
+        v = float('-inf')
+        alpha = float('-inf')
+        beta = float('inf')
+        bestAction = successors[0][1]
+        for s in successors:
+            v = max(v, self.minimax_prune_val(1, s[0], alpha, beta, 0))
+            if v > beta:
+                return bestAction
+            if alpha < v:
+                bestAction = s[1]
+                alpha = v
+        return bestAction
+            
         
         
     def minimax_prune_val(self, agent, gameState: GameState, alpha, beta, depth):
@@ -215,7 +227,8 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             return self.evaluationFunction(gameState)
         if agent == 0:
             v = float('-inf')
-            for s in [gameState.generateSuccessor(0, action) for action in gameState.getLegalActions(0)]:
+            for action in gameState.getLegalActions(0):
+                s = gameState.generateSuccessor(0, action)
                 v = max(v, self.minimax_prune_val(1, s, alpha, beta, depth))
                 if v > beta:
                     return v
