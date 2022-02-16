@@ -162,6 +162,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Implementing minimax with one agent and several adversaries
 
         Args:
+            agent (int): the current agent taking action
             gameState (GameState): start game state for evaluation.
             depth (int): depth of the current search.
 
@@ -206,9 +207,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 bestAction = s[1]
                 alpha = v
         return bestAction
-            
-        
-        
+
     def minimax_prune_val(self, agent, gameState: GameState, alpha, beta, depth):
         """
         Implementing minimax tree with multiple minimizers, along with alpha-beta pruning.
@@ -242,13 +241,12 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 depth += 1
             for action in gameState.getLegalActions(agent):
                 s = gameState.generateSuccessor(agent, action)
-                v = min(v, self.minimax_prune_val(nextAgent, s, alpha, beta, depth))
+                v = min(v, self.minimax_prune_val(
+                    nextAgent, s, alpha, beta, depth))
                 if v < alpha:
                     return v
-                beta = min(beta, v)      
+                beta = min(beta, v)
             return v
-        
-        
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
@@ -263,8 +261,45 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         All ghosts should be modeled as choosing uniformly at random from their
         legal moves.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        successors = [(gameState.generateSuccessor(0, action), action)
+                      for action in gameState.getLegalActions(0)]
+        v = float('-inf')
+        bestAction = successors[0][1]
+        for s in successors:
+            new_v = self.expectimax_val(1, s[0], 0)
+            if v < new_v:
+                bestAction = s[1]
+                v = new_v
+        return bestAction
+
+    def expectimax_val(self, agent, gameState: GameState, depth):
+        """
+        Calculates expectimax value. 
+
+        Args:
+            agent (int): the current agent. 0 is Pacman. 
+            gameState (GameState): the current state.
+            depth (int): current search depth.
+
+        Returns:
+            int: score of this move
+        """
+
+        # Reaching terminal state
+        if gameState.isWin() or gameState.isLose() or depth == self.depth:
+            return self.evaluationFunction(gameState)
+        nextAgent = agent + 1
+
+        # Pacman's (maximizer) turn
+        if agent == 0:
+            return max([self.expectimax_val(nextAgent, gameState.generateSuccessor(agent, action), depth) for action in gameState.getLegalActions(agent)])
+
+        # Ghosts' turn
+        else:
+            if nextAgent == gameState.getNumAgents():
+                nextAgent = 0
+                depth += 1
+            return sum([self.expectimax_val(nextAgent, gameState.generateSuccessor(agent, action), depth) for action in gameState.getLegalActions(agent)]) / len(gameState.getLegalActions(agent))
 
 
 def betterEvaluationFunction(currentGameState: GameState):
@@ -272,10 +307,24 @@ def betterEvaluationFunction(currentGameState: GameState):
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
     evaluation function (question 5).
 
-    DESCRIPTION: <write something here so we know what you did>
+    DESCRIPTION: 
+    ghost_hunt: awards eating ghosts, and punishes small distance between pacman and
+    ghost position
+    food_gooble: if eats all food, AWARD! awards reducing food counts.
+    pellet_nabbing: awards getting closer to the closest food pellet
+    unstoppable: awards getting higher score
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    ghost_hunt = - 0.1 * (currentGameState.getNumAgents() - 1) - 0.1 * min([manhattanDistance(
+        currentGameState.getPacmanPosition(), s) for s in currentGameState.getGhostPositions()])
+    if currentGameState.getFood().count():
+        food_gobble = - 0.5 / currentGameState.getFood().count()
+        pellet_nabbing = 1 / max([manhattanDistance(currentGameState.getPacmanPosition(), s)
+                                 for s in currentGameState.getFood().asList()])
+    else:
+        food_gobble = 100
+        pellet_nabbing = 0
+    unstoppable = 0.5 * currentGameState.getScore()
+    return ghost_hunt + food_gobble + pellet_nabbing + unstoppable
 
 
 # Abbreviation
