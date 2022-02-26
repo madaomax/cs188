@@ -215,10 +215,9 @@ def pacmanSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[
                                & PropSymbolExpr('East', time=last))
     if not possible_causes:
         return None
-
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
+    
+    # return PropSymbolExpr(pacman_str, x, y, time=now) % conjoin([~PropSymbolExpr(pacman_str, x, y, time=last), ~PropSymbolExpr(wall_str, x, y), disjoin(possible_causes)])
+    return PropSymbolExpr(pacman_str, x, y, time=now) % disjoin(possible_causes)
 
 
 def SLAMSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[bool]]) -> Expr:
@@ -293,10 +292,19 @@ def pacphysicsAxioms(t: int, all_coords: List[Tuple], non_outer_wall_coords: Lis
     """
     pacphysics_sentences = []
 
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
-
+    for (x, y) in all_coords:
+        pacphysics_sentences.append(PropSymbolExpr(wall_str, x, y) >> ~PropSymbolExpr(pacman_str, x, y, time=t))
+            
+    pacphysics_sentences.append(exactlyOne([PropSymbolExpr(pacman_str, x, y, time=t) for (x, y) in non_outer_wall_coords]))
+    
+    pacphysics_sentences.append(exactlyOne([PropSymbolExpr(direction, time=t) for direction in DIRECTIONS]))
+    
+    if sensorModel:
+        pacphysics_sentences.append(sensorModel(t, non_outer_wall_coords))
+    
+    if t != 0 and successorAxioms:
+        pacphysics_sentences.append(successorAxioms(t, walls_grid, non_outer_wall_coords))
+        
     return conjoin(pacphysics_sentences)
 
 
@@ -329,9 +337,18 @@ def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], 
     map_sent = [PropSymbolExpr(wall_str, x, y) for x, y in walls_list]
     KB.append(conjoin(map_sent))
 
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
+    KB.append(pacphysicsAxioms(0, all_coords, non_outer_wall_coords, walls_grid, sensorModel=None, successorAxioms=allLegalSuccessorAxioms))
+    KB.append(pacphysicsAxioms(1, all_coords, non_outer_wall_coords, walls_grid, sensorModel=None, successorAxioms=allLegalSuccessorAxioms))
+    
+    # Pacman's current location
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+    
+    KB.append(PropSymbolExpr(action0, time=0))
+    KB.append(PropSymbolExpr(action1, time=1))
+    
+    model1 = findModel(PropSymbolExpr(pacman_str, x1, y1, time=1) & conjoin(KB))
+    model2 = findModel(~PropSymbolExpr(pacman_str, x1, y1, time=1) & conjoin(KB))
+    return (model1, model2)
 
 # ______________________________________________________________________________
 # QUESTION 4
