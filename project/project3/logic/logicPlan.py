@@ -374,9 +374,18 @@ def positionLogicPlan(problem) -> List:
     actions = ['North', 'South', 'East', 'West']
     KB = []
 
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
+    # initial knowledge: Pacman's initial location at t=0
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+    
+    for t in range(50):
+        print(t)
+        KB.append(exactlyOne([PropSymbolExpr(pacman_str, x, y, time=t) for (x, y) in non_wall_coords]))
+        model = findModel(PropSymbolExpr(pacman_str, xg, yg, time=t) & conjoin(KB))
+        if model:
+            return extractActionSequence(model, actions)
+        KB.append(exactlyOne([PropSymbolExpr(direction, time=t) for direction in DIRECTIONS]))
+        KB.append(conjoin([pacmanSuccessorAxiomSingle(x, y, t+1, walls_grid) for (x, y) in non_wall_coords]))
+        
 
 # ______________________________________________________________________________
 # QUESTION 5
