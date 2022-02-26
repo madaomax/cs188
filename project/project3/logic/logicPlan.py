@@ -149,7 +149,7 @@ def atLeastOne(literals: List[Expr]) -> Expr:
     """
     Given a list of Expr literals (i.e. in the form A or ~A), return a single 
     Expr instance in CNF (conjunctive normal form) that represents the logic 
-    that at least one of the literals  ist is true.
+    that at least one of the literals is true.
     >>> A = PropSymbolExpr('A');
     >>> B = PropSymbolExpr('B');
     >>> symbols = [A, B]
@@ -164,9 +164,7 @@ def atLeastOne(literals: List[Expr]) -> Expr:
     >>> print(pl_true(atleast1,model2))
     True
     """
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
+    return disjoin(literals)
 
 
 def atMostOne(literals: List[Expr]) -> Expr:
@@ -176,20 +174,16 @@ def atMostOne(literals: List[Expr]) -> Expr:
     the expressions in the list is true.
     itertools.combinations may be useful here.
     """
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
+    return conjoin([~pair[0]|~pair[1] for pair in itertools.combinations(literals, 2)])
 
 
 def exactlyOne(literals: List[Expr]) -> Expr:
     """
     Given a list of Expr literals, return a single Expr instance in 
-    CNF (conjunctive normal form)that represents the logic that exactly one of 
+    CNF (conjunctive normal form) that represents the logic that exactly one of 
     the expressions in the list is true.
     """
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
+    return atLeastOne(literals) & atMostOne(literals)
 
 # ______________________________________________________________________________
 # QUESTION 3
