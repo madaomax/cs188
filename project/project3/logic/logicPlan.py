@@ -216,7 +216,6 @@ def pacmanSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[
     if not possible_causes:
         return None
     
-    # return PropSymbolExpr(pacman_str, x, y, time=now) % conjoin([~PropSymbolExpr(pacman_str, x, y, time=last), ~PropSymbolExpr(wall_str, x, y), disjoin(possible_causes)])
     return PropSymbolExpr(pacman_str, x, y, time=now) % disjoin(possible_causes)
 
 
@@ -384,7 +383,7 @@ def positionLogicPlan(problem) -> List:
         if model:
             return extractActionSequence(model, actions)
         KB.append(exactlyOne([PropSymbolExpr(direction, time=t) for direction in DIRECTIONS]))
-        KB.append(conjoin([pacmanSuccessorAxiomSingle(x, y, t+1, walls_grid) for (x, y) in non_wall_coords]))
+        KB.append(conjoin([pacmanSuccessorAxiomSingle(x, y, t + 1, walls_grid) for (x, y) in non_wall_coords]))
         
 
 # ______________________________________________________________________________
@@ -413,9 +412,27 @@ def foodLogicPlan(problem) -> List:
 
     KB = []
 
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
+    # initial knowledge: Pacman's initial location at t=0
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+    # initialize food
+    for (x, y) in non_wall_coords:
+        if (x, y) in food:
+            KB.append(PropSymbolExpr(food_str, x, y, time=0))
+        else:
+            KB.append(~PropSymbolExpr(food_str, x, y, time=0))
+   
+    for t in range(50):
+        print(t)
+        KB.append(exactlyOne([PropSymbolExpr(pacman_str, x, y, time=t) for (x, y) in non_wall_coords]))
+        
+        goal = ~disjoin([PropSymbolExpr(food_str, x, y, time=t) for (x, y) in food])
+        model = findModel(goal & conjoin(KB))
+        if model:
+            return extractActionSequence(model, actions)
+        
+        KB.append(exactlyOne([PropSymbolExpr(direction, time=t) for direction in DIRECTIONS]))
+        KB.append(conjoin([pacmanSuccessorAxiomSingle(x, y, t + 1, walls) for (x, y) in non_wall_coords]))
+        KB.append(conjoin([((PropSymbolExpr(pacman_str, x, y, time=t)|~PropSymbolExpr(food_str, x, y, time=t)) % ~PropSymbolExpr(food_str, x, y, time=t+1)) for (x, y) in non_wall_coords]))
 
 # ______________________________________________________________________________
 # QUESTION 6
