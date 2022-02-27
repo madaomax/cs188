@@ -451,12 +451,35 @@ def localization(problem, agent) -> Generator:
         range(1, problem.getWidth()+1), range(1, problem.getHeight()+1)))
 
     KB = []
-
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    
+    # wall location
+    KB.extend([PropSymbolExpr(wall_str, x, y) for (x, y) in walls_list])
+    KB.extend([~PropSymbolExpr(wall_str, x, y) for (x, y) in non_outer_wall_coords if (x, y) not in walls_list])
 
     for t in range(agent.num_timesteps):
-        "*** END YOUR CODE HERE ***"
+        
+        # Add pacphysics, action, and percept information to KB
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, walls_grid, sensorModel=sensorAxioms, successorAxioms=allLegalSuccessorAxioms))
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        KB.append(fourBitPerceptRules(t, agent.getPercepts()))
+
+        # Find possible pacman locations with updated KB
+        possible_locations = []
+        for (x, y) in non_outer_wall_coords:
+            if entails(conjoin(KB), PropSymbolExpr(pacman_str, x, y, time=t)):
+                # guaranteed to be at (x, y)
+                KB.append(PropSymbolExpr(pacman_str, x, y, time=t))
+                possible_locations.append((x, y))
+            elif entails(conjoin(KB), ~PropSymbolExpr(pacman_str, x, y, time=t)):
+                # pacman guaranteed not at (x, y)
+                KB.append(~PropSymbolExpr(pacman_str, x, y, time=t))
+            else:
+                # cannot be proven, blurry situation
+                possible_locations.append((x, y))
+        
+        # move to next state
+        agent.moveToNextState(agent.actions[t])
+        
         yield possible_locations
 
 # ______________________________________________________________________________
