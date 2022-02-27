@@ -474,7 +474,7 @@ def localization(problem, agent) -> Generator:
                 # pacman guaranteed not at (x, y)
                 KB.append(~PropSymbolExpr(pacman_str, x, y, time=t))
             else:
-                # cannot be proven, blurry situation
+                # cannot be proven, ambiguous situation
                 possible_locations.append((x, y))
         
         # move to next state
@@ -511,11 +511,36 @@ def mapping(problem, agent) -> Generator:
             outer_wall_sent.append(PropSymbolExpr(wall_str, x, y))
     KB.append(conjoin(outer_wall_sent))
 
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # Add initial position of Pacman
+    KB.append(PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time=0))
+    # There is no wall at Pacman's start position
+    KB.append(~PropSymbolExpr(wall_str, pac_x_0, pac_y_0))
 
     for t in range(agent.num_timesteps):
-        "*** END YOUR CODE HERE ***"
+        
+        # Add pacphysics, action, and percept information to KB
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, walls_grid=known_map, sensorModel=sensorAxioms, successorAxioms=allLegalSuccessorAxioms))
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        KB.append(fourBitPerceptRules(t, agent.getPercepts()))
+        
+        # Find provable wall locations with updated KB
+        for (x, y) in non_outer_wall_coords:
+            # print("CHECK", entails(conjoin(KB), PropSymbolExpr(wall_str, x, y)), entails(conjoin(KB), ~PropSymbolExpr(wall_str, x, y)))
+            if known_map[x][y] == 1 or entails(conjoin(KB), PropSymbolExpr(wall_str, x, y)):
+                # guaranteed to have a wall at (x, y)
+                KB.append(PropSymbolExpr(wall_str, x, y))
+                known_map[x][y] = 1
+            elif known_map[x][y] == 0 or entails(conjoin(KB), ~PropSymbolExpr(wall_str, x, y)):
+                # guaranteed to not have a wall at (x, y)
+                KB.append(~PropSymbolExpr(wall_str, x, y))
+                known_map[x][y] = 0
+            else:
+                # cannot be proven, ambiguous situation
+                known_map[x][y] = -1
+                
+        # take action and move to the next step
+        agent.moveToNextState(agent.actions[t])
+        
         yield known_map
 
 # ______________________________________________________________________________
