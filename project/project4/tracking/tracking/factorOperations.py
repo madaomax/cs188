@@ -99,11 +99,32 @@ def joinFactors(factors: ValuesView[Factor]):
                     "\nappear in more than one input factor.\n" + 
                     "Input factors: \n" +
                     "\n".join(map(str, factors)))
-
-
-    "*** YOUR CODE HERE ***"
-    raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
+            
+    inputConditionedVariables = set()
+    inputUnconditionedVariables = set()
+    inputVariableDomainsDict = []
+    
+    for factor in factors:
+        inputConditionedVariables.update(factor.conditionedVariables())
+        inputUnconditionedVariables.update(factor.unconditionedVariables())
+        inputVariableDomainsDict = factor.variableDomainsDict()
+    
+    # Remove conditioned variables that becomes unconditioned.
+    for var in inputUnconditionedVariables:
+        if var in inputConditionedVariables:
+            inputConditionedVariables.remove(var)
+    
+    # Instantiate the result factor with variable assignments.
+    result = Factor(inputUnconditionedVariables, inputConditionedVariables, inputVariableDomainsDict)
+    
+    # Setting the probability of the result factor by multiplying matching probabilities together.
+    for result_assignDict in result.getAllPossibleAssignmentDicts():
+        result_prob = 1
+        for factor_prob in [factor.getProbability(result_assignDict) for factor in factors]:
+            result_prob = result_prob * factor_prob
+        result.setProbability(result_assignDict, result_prob)
+    
+    return result
 
 ########### ########### ###########
 ########### QUESTION 3  ###########
