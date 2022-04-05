@@ -354,9 +354,11 @@ class DiscreteDistribution(dict):
         >>> empty
         {}
         """
-        "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-        "*** END YOUR CODE HERE ***"
+        if self.total() == 0:
+            return
+        total = self.total()
+        for key in self.keys():
+            self[key] = self[key] / total
 
     def sample(self):
         """
@@ -379,9 +381,12 @@ class DiscreteDistribution(dict):
         >>> round(samples.count('d') * 1.0/N, 1)
         0.0
         """
-        "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-        "*** END YOUR CODE HERE ***"
+        random_val = random.random() * self.total()
+        for item in self.items():
+            random_val -= item[1]
+            if random_val < 0:
+                return item[0]
+        return None
 
 
 class InferenceModule:
