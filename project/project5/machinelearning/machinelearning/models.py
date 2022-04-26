@@ -201,7 +201,16 @@ class LanguageIDModel(object):
         self.languages = ["English", "Spanish", "Finnish", "Dutch", "Polish"]
 
         # Initialize your model parameters here
-        "*** YOUR CODE HERE ***"
+        self.batch_size = 16
+        self.learning_rate = -0.05
+        self.hidden_size = 400
+        self.w1 = nn.Parameter(self.num_chars, self.hidden_size)
+        self.b1 = nn.Parameter(1, self.hidden_size)
+        self.w2 = nn.Parameter(self.hidden_size, self.hidden_size)
+        self.b2 = nn.Parameter(1, self.hidden_size)
+        self.w3 = nn.Parameter(self.hidden_size, 5)
+        self.b3 = nn.Parameter(1, 5)
+        self.parameters = [self.w1, self.b1, self.w2, self.b2, self.w3, self.b3]
 
     def run(self, xs):
         """
@@ -232,7 +241,13 @@ class LanguageIDModel(object):
             A node with shape (batch_size x 5) containing predicted scores
                 (also called logits)
         """
-        "*** YOUR CODE HERE ***"
+        # first layer of f_initial
+        vector = nn.Linear(xs[0], self.w1)
+        for x in xs:
+            z = nn.Add(nn.Linear(x, self.w1), nn.Linear(vector, self.w2))
+            layer_1 = nn.AddBias(z, self.b1)
+            vector = nn.ReLU(layer_1)
+        return nn.AddBias(nn.Linear(vector, self.w3), self.b3)
 
     def get_loss(self, xs, y):
         """
@@ -248,10 +263,15 @@ class LanguageIDModel(object):
             y: a node with shape (batch_size x 5)
         Returns: a loss node
         """
-        "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(xs), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
-        "*** YOUR CODE HERE ***"
+        while dataset.get_validation_accuracy() < 0.815:
+            for x, y in dataset.iterate_once(self.batch_size):
+                loss = self.get_loss(x, y)
+                updates = nn.gradients(loss, self.parameters)
+                for i in range(len(updates)):
+                    self.parameters[i].update(updates[i], self.learning_rate)
