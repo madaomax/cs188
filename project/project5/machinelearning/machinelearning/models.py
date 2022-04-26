@@ -269,7 +269,7 @@ class LanguageIDModel(object):
         """
         Trains the model.
         """
-        while dataset.get_validation_accuracy() < 0.815:
+        while dataset.get_validation_accuracy() < 0.84:
             for x, y in dataset.iterate_once(self.batch_size):
                 loss = self.get_loss(x, y)
                 updates = nn.gradients(loss, self.parameters)
