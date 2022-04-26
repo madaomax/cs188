@@ -63,12 +63,13 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         self.batch_size = 1
-        self.learning_rate = 0.001
-        self.hidden_size = 1
+        self.learning_rate = -0.001
+        self.hidden_size = 400
         self.w1 = nn.Parameter(1, self.hidden_size)
-        self.b1 = nn.Parameter(self.hidden_size, 1)
-        self.w2 = nn.Parameter(1, self.hidden_size)
-        self.b2 = nn.Parameter(self.hidden_size, 1)
+        self.b1 = nn.Parameter(1, self.hidden_size)
+        self.w2 = nn.Parameter(self.hidden_size, 1)
+        self.b2 = nn.Parameter(1, 1)
+        self.parameters = [self.w1, self.b1, self.w2, self.b2]
         
     def run(self, x):
         """
@@ -80,10 +81,10 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         xw_1 = nn.Linear(x, self.w1)
-        xw_1_b = nn.AddBias(xw_1, self.b1)
-        xw_2 = nn.Linear(nn.ReLU(xw_1_b), self.w2)
-        xw_2_b = nn.AddBias(xw_2, self.b2)
-        return xw_2_b
+        layer_1 = nn.AddBias(xw_1, self.b1)
+        xw_2 = nn.Linear(nn.ReLU(layer_1), self.w2)
+        layer_2 = nn.AddBias(xw_2, self.b2)
+        return layer_2
 
     def get_loss(self, x, y):
         """
@@ -95,26 +96,21 @@ class RegressionModel(object):
                 to be used for training
         Returns: a loss node
         """
-        return nn.SquareLoss(x, y)
+        return nn.SquareLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
-        while True:
-            average_training_loss = 0
-            count = 0
+        scalar_loss = 1
+        while scalar_loss > 0.02:
             for x, y in dataset.iterate_once(self.batch_size):
                 loss = self.get_loss(x, y)
-                updates = nn.gradients(loss, [self.w1, self.w2, self.b1, self.b2])
-                self.w1.update(updates[0], self.learning_rate)
-                self.w2.update(updates[1], self.learning_rate)
-                self.b1.update(updates[2], self.learning_rate)
-                self.b2.update(updates[3], self.learning_rate)
-                average_training_loss += nn.as_scalar(loss)
-                count += 1
-            if (average_training_loss / count) <= 0.02:
-                break
+                scalar_loss = nn.as_scalar(loss)
+                if scalar_loss > 0.02:
+                    updates = nn.gradients(loss, self.parameters)
+                    for i in range(len(updates)):
+                        self.parameters[i].update(updates[i], self.learning_rate)
                 
 
 class DigitClassificationModel(object):
